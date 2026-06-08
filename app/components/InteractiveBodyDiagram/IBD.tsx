@@ -92,10 +92,10 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
         const centroid = centroidOf(points);
         const matchedSlug = matchLabelFromPoint(centroid);
         const label = matchedSlug ? zoneLabels[matchedSlug] ?? matchedSlug : 'Custom area';
-        const sel: FreehandSelection = { type: 'freehand', label, points };
+        const sel: FreehandSelection = { type: 'freehand', label, points, drillLevel };
         dispatch({ type: 'ADD_FREEHAND', payload: sel });
       },
-      [dispatch]
+      [dispatch, drillLevel]
     )
   );
 
@@ -105,10 +105,10 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
       (center: [number, number], radius: number) => {
         const matchedSlug = matchLabelFromPoint(center);
         const label = matchedSlug ? zoneLabels[matchedSlug] ?? matchedSlug : 'Custom area';
-        const sel: RadiusSelection = { type: 'radius', label, center, radius };
+        const sel: RadiusSelection = { type: 'radius', label, center, radius, drillLevel };
         dispatch({ type: 'ADD_RADIUS', payload: sel });
       },
-      [dispatch]
+      [dispatch, drillLevel]
     )
   );
 
@@ -168,8 +168,12 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
     .filter((s): s is ZoneSelection => s.type === 'zone')
     .map((s) => s.zoneId);
 
-  const freehandSels = selections.filter((s): s is FreehandSelection => s.type === 'freehand');
-  const radiusSels = selections.filter((s): s is RadiusSelection => s.type === 'radius');
+  const freehandSels = selections.filter(
+    (s): s is FreehandSelection => s.type === 'freehand' && s.drillLevel === drillLevel
+  );
+  const radiusSels = selections.filter(
+    (s): s is RadiusSelection => s.type === 'radius' && s.drillLevel === drillLevel
+  );
 
   const activeDrawPoints = drawModeData.drawState.points;
   const activeRadius =
