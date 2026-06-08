@@ -2,6 +2,7 @@
 
 import React, { forwardRef, useState } from 'react';
 import { bodyFront } from '../data/bodyFront';
+import { bodyBack } from '../data/bodyBack';
 import type { RegionZone } from '../data/regionConfig';
 import type { FreehandSelection, RadiusSelection, Mode } from '../types';
 
@@ -11,9 +12,12 @@ const AMBER_STROKE = '#D97706';
 const INDIGO = '#818CF8';
 const INDIGO_STROKE = '#6366F1';
 
+type BodyEntry = { slug: string; path: { left?: string[]; right?: string[]; common?: string[] } };
+
 type Props = {
   viewBox: string;
   zones: RegionZone[];
+  bodyData?: BodyEntry[];
   mode: Mode;
   selectedZones: string[];
   onZoneClick: (selectionId: string) => void;
@@ -32,6 +36,7 @@ export const RegionDiagram = forwardRef<SVGSVGElement, Props>(function RegionDia
   {
     viewBox,
     zones,
+    bodyData = bodyFront,
     mode,
     selectedZones,
     onZoneClick,
@@ -87,7 +92,7 @@ export const RegionDiagram = forwardRef<SVGSVGElement, Props>(function RegionDia
     >
       {/* ── Zone paths from bodyFront ── */}
       {zones.map((zoneConfig) => {
-        const bfZone = bodyFront.find((z) => z.slug === zoneConfig.bodyFrontSlug);
+        const bfZone = bodyData.find((z) => z.slug === zoneConfig.slug);
         if (!bfZone) return null;
 
         const paths: string[] = [];

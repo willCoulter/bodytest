@@ -1,6 +1,10 @@
 export type DrillLevel =
   | 'body'
   | 'back'
+  | 'back_upper'
+  | 'back_lower'
+  | 'back_left_hamstring'
+  | 'back_right_hamstring'
   | 'head'
   | 'upper_body'
   | 'abdomen'

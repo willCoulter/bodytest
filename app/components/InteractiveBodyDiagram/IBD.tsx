@@ -14,6 +14,8 @@ import { captureSnapshot } from './utils/svgSnapshot';
 import { matchLabelFromPoint, centroidOf } from './utils/labelMatcher';
 import { zoneLabels } from './data/zoneLabels';
 import { REGION_CONFIGS, getRegionForZone } from './data/regionConfig';
+import { BACK_REGION_CONFIGS, getBackRegionForZone } from './data/backRegionConfig';
+import { bodyBack } from './data/bodyBack';
 import type { IBDOutput, Mode, ZoneSelection, FreehandSelection, RadiusSelection } from './types';
 
 // ─── Icon components ────────────────────────────────────────────────────────
@@ -94,7 +96,9 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
         const centroid = centroidOf(points);
         const matchedSlug = matchLabelFromPoint(centroid);
         const label = matchedSlug ? zoneLabels[matchedSlug] ?? matchedSlug : 'Custom area';
-        const viewKey = bodyView === 'back' ? 'back' : drillLevel;
+        const viewKey = bodyView === 'back'
+          ? (drillLevel === 'body' ? 'back' : drillLevel)
+          : drillLevel;
         const sel: FreehandSelection = { type: 'freehand', label, points, drillLevel: viewKey };
         dispatch({ type: 'ADD_FREEHAND', payload: sel });
       },
@@ -108,7 +112,9 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
       (center: [number, number], radius: number) => {
         const matchedSlug = matchLabelFromPoint(center);
         const label = matchedSlug ? zoneLabels[matchedSlug] ?? matchedSlug : 'Custom area';
-        const viewKey = bodyView === 'back' ? 'back' : drillLevel;
+        const viewKey = bodyView === 'back'
+          ? (drillLevel === 'body' ? 'back' : drillLevel)
+          : drillLevel;
         const sel: RadiusSelection = { type: 'radius', label, center, radius, drillLevel: viewKey };
         dispatch({ type: 'ADD_RADIUS', payload: sel });
       },
@@ -148,15 +154,20 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
     [dispatch]
   );
 
-  // Back-body zone click: resolve to a side-aware ID and toggle directly
+  // Back-body zone click: navigate to drill-down or select directly
   const handleBackZoneClick = useCallback(
     (slug: string, side: 'left' | 'right' | 'common') => {
-      const zoneId = side === 'common' ? slug : `${slug}_${side}`;
-      const label = zoneLabels[zoneId] ?? zoneLabels[slug] ?? slug;
-      const sel: ZoneSelection = { type: 'zone', zoneId, label };
-      dispatch({ type: 'TOGGLE_ZONE', payload: sel });
+      const region = getBackRegionForZone(slug, side);
+      if (region) {
+        drillInto(region);
+      } else {
+        const zoneId = side === 'common' ? slug : `${slug}_${side}`;
+        const label = zoneLabels[zoneId] ?? zoneLabels[slug] ?? slug;
+        const sel: ZoneSelection = { type: 'zone', zoneId, label };
+        dispatch({ type: 'TOGGLE_ZONE', payload: sel });
+      }
     },
-    [dispatch]
+    [dispatch, drillInto]
   );
 
   const onPointerDown = useCallback(
@@ -190,7 +201,9 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
     .filter((s): s is ZoneSelection => s.type === 'zone')
     .map((s) => s.zoneId);
 
-  const effectiveViewKey = bodyView === 'back' ? 'back' : drillLevel;
+  const effectiveViewKey = bodyView === 'back'
+    ? (drillLevel === 'body' ? 'back' : drillLevel)
+    : drillLevel;
   const freehandSels = selections.filter(
     (s): s is FreehandSelection => s.type === 'freehand' && s.drillLevel === effectiveViewKey
   );
@@ -218,17 +231,23 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
     readOnly,
   };
 
-  // Resolve current region config (null for body and head)
+  // Resolve current front region config
   const currentRegionConfig =
-    drillLevel !== 'body' && drillLevel !== 'head'
+    bodyView === 'front' && drillLevel !== 'body' && drillLevel !== 'head'
       ? REGION_CONFIGS.find((c) => c.id === drillLevel) ?? null
+      : null;
+
+  // Resolve current back region config
+  const currentBackRegionConfig =
+    bodyView === 'back' && drillLevel !== 'body'
+      ? BACK_REGION_CONFIGS.find((c) => c.id === drillLevel) ?? null
       : null;
 
   // Breadcrumb label
   const drillLabel =
     drillLevel === 'head'
       ? 'Head'
-      : currentRegionConfig?.label ?? null;
+      : (currentRegionConfig ?? currentBackRegionConfig)?.label ?? null;
 
   return (
     <div className={styles.wrapper}>
@@ -250,8 +269,8 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
           </button>
         </div>
 
-        {/* Breadcrumb (front drill-downs only) */}
-        {bodyView === 'front' && drillLevel !== 'body' && (
+        {/* Breadcrumb */}
+        {drillLevel !== 'body' && (
           <div className={styles.breadcrumb}>
             <button className={styles.breadcrumbLink} onClick={drillOut}>
               Body
@@ -304,11 +323,21 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
         )}
 
         {/* Diagrams */}
-        {bodyView === 'back' && (
+        {bodyView === 'back' && drillLevel === 'body' && (
           <BodyBackDiagram
             ref={svgRef}
             {...sharedDiagramProps}
             onZoneClick={handleBackZoneClick}
+          />
+        )}
+        {bodyView === 'back' && currentBackRegionConfig && (
+          <RegionDiagram
+            ref={svgRef}
+            {...sharedDiagramProps}
+            viewBox={currentBackRegionConfig.viewBox}
+            zones={currentBackRegionConfig.zones}
+            bodyData={bodyBack}
+            onZoneClick={handleRegionZoneClick}
           />
         )}
         {bodyView === 'front' && drillLevel === 'body' && (

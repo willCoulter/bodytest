@@ -6,7 +6,7 @@ import type { DrillLevel } from '../types';
 // selectionId: the zoneId written into ZoneSelection output.
 
 export type RegionZone = {
-  bodyFrontSlug: string;
+  slug: string;
   renderSides: ('left' | 'right' | 'common')[];
   selectionId: string;
 };
@@ -25,11 +25,11 @@ export const REGION_CONFIGS: RegionConfig[] = [
     label: 'Upper Body',
     viewBox: '235 232 258 220',
     zones: [
-      { bodyFrontSlug: 'neck',      renderSides: ['common', 'left', 'right'], selectionId: 'neck' },
-      { bodyFrontSlug: 'trapezius', renderSides: ['left'],                    selectionId: 'trapezius_left' },
-      { bodyFrontSlug: 'trapezius', renderSides: ['right'],                   selectionId: 'trapezius_right' },
-      { bodyFrontSlug: 'chest',     renderSides: ['left'],                    selectionId: 'chest_left' },
-      { bodyFrontSlug: 'chest',     renderSides: ['right'],                   selectionId: 'chest_right' },
+      { slug: 'neck',      renderSides: ['common', 'left', 'right'], selectionId: 'neck' },
+      { slug: 'trapezius', renderSides: ['left'],                    selectionId: 'trapezius_left' },
+      { slug: 'trapezius', renderSides: ['right'],                   selectionId: 'trapezius_right' },
+      { slug: 'chest',     renderSides: ['left'],                    selectionId: 'chest_left' },
+      { slug: 'chest',     renderSides: ['right'],                   selectionId: 'chest_right' },
     ],
   },
   {
@@ -37,10 +37,10 @@ export const REGION_CONFIGS: RegionConfig[] = [
     label: 'Abdomen',
     viewBox: '242 414 252 316',
     zones: [
-      { bodyFrontSlug: 'abs',      renderSides: ['left'],  selectionId: 'abs_left' },
-      { bodyFrontSlug: 'abs',      renderSides: ['right'], selectionId: 'abs_right' },
-      { bodyFrontSlug: 'obliques', renderSides: ['left'],  selectionId: 'obliques_left' },
-      { bodyFrontSlug: 'obliques', renderSides: ['right'], selectionId: 'obliques_right' },
+      { slug: 'abs',      renderSides: ['left'],  selectionId: 'abs_left' },
+      { slug: 'abs',      renderSides: ['right'], selectionId: 'abs_right' },
+      { slug: 'obliques', renderSides: ['left'],  selectionId: 'obliques_left' },
+      { slug: 'obliques', renderSides: ['right'], selectionId: 'obliques_right' },
     ],
   },
   {
@@ -48,10 +48,10 @@ export const REGION_CONFIGS: RegionConfig[] = [
     label: 'Left Arm',
     viewBox: '100 285 200 425',
     zones: [
-      { bodyFrontSlug: 'deltoids', renderSides: ['left'], selectionId: 'deltoids_left' },
-      { bodyFrontSlug: 'biceps',   renderSides: ['left'], selectionId: 'biceps_left' },
-      { bodyFrontSlug: 'triceps',  renderSides: ['left'], selectionId: 'triceps_left' },
-      { bodyFrontSlug: 'forearm',  renderSides: ['left'], selectionId: 'forearm_left' },
+      { slug: 'deltoids', renderSides: ['left'], selectionId: 'deltoids_left' },
+      { slug: 'biceps',   renderSides: ['left'], selectionId: 'biceps_left' },
+      { slug: 'triceps',  renderSides: ['left'], selectionId: 'triceps_left' },
+      { slug: 'forearm',  renderSides: ['left'], selectionId: 'forearm_left' },
     ],
   },
   {
@@ -59,10 +59,10 @@ export const REGION_CONFIGS: RegionConfig[] = [
     label: 'Right Arm',
     viewBox: '428 285 200 425',
     zones: [
-      { bodyFrontSlug: 'deltoids', renderSides: ['right'], selectionId: 'deltoids_right' },
-      { bodyFrontSlug: 'biceps',   renderSides: ['right'], selectionId: 'biceps_right' },
-      { bodyFrontSlug: 'triceps',  renderSides: ['right'], selectionId: 'triceps_right' },
-      { bodyFrontSlug: 'forearm',  renderSides: ['right'], selectionId: 'forearm_right' },
+      { slug: 'deltoids', renderSides: ['right'], selectionId: 'deltoids_right' },
+      { slug: 'biceps',   renderSides: ['right'], selectionId: 'biceps_right' },
+      { slug: 'triceps',  renderSides: ['right'], selectionId: 'triceps_right' },
+      { slug: 'forearm',  renderSides: ['right'], selectionId: 'forearm_right' },
     ],
   },
   {
@@ -70,7 +70,7 @@ export const REGION_CONFIGS: RegionConfig[] = [
     label: 'Left Hand',
     viewBox: '35 685 138 148',
     zones: [
-      { bodyFrontSlug: 'hands', renderSides: ['left'], selectionId: 'hands_left' },
+      { slug: 'hands', renderSides: ['left'], selectionId: 'hands_left' },
     ],
   },
   {
@@ -78,7 +78,7 @@ export const REGION_CONFIGS: RegionConfig[] = [
     label: 'Right Hand',
     viewBox: '560 685 138 148',
     zones: [
-      { bodyFrontSlug: 'hands', renderSides: ['right'], selectionId: 'hands_right' },
+      { slug: 'hands', renderSides: ['right'], selectionId: 'hands_right' },
     ],
   },
   {
@@ -86,12 +86,12 @@ export const REGION_CONFIGS: RegionConfig[] = [
     label: 'Lower Body',
     viewBox: '228 628 280 450',
     zones: [
-      { bodyFrontSlug: 'adductors',  renderSides: ['left'],  selectionId: 'adductors_left' },
-      { bodyFrontSlug: 'adductors',  renderSides: ['right'], selectionId: 'adductors_right' },
-      { bodyFrontSlug: 'quadriceps', renderSides: ['left'],  selectionId: 'quadriceps_left' },
-      { bodyFrontSlug: 'quadriceps', renderSides: ['right'], selectionId: 'quadriceps_right' },
-      { bodyFrontSlug: 'knees',      renderSides: ['left'],  selectionId: 'knees_left' },
-      { bodyFrontSlug: 'knees',      renderSides: ['right'], selectionId: 'knees_right' },
+      { slug: 'adductors',  renderSides: ['left'],  selectionId: 'adductors_left' },
+      { slug: 'adductors',  renderSides: ['right'], selectionId: 'adductors_right' },
+      { slug: 'quadriceps', renderSides: ['left'],  selectionId: 'quadriceps_left' },
+      { slug: 'quadriceps', renderSides: ['right'], selectionId: 'quadriceps_right' },
+      { slug: 'knees',      renderSides: ['left'],  selectionId: 'knees_left' },
+      { slug: 'knees',      renderSides: ['right'], selectionId: 'knees_right' },
     ],
   },
   {
@@ -99,9 +99,9 @@ export const REGION_CONFIGS: RegionConfig[] = [
     label: 'Left Leg',
     viewBox: '225 958 120 355',
     zones: [
-      { bodyFrontSlug: 'tibialis', renderSides: ['left'], selectionId: 'tibialis_left' },
-      { bodyFrontSlug: 'calves',   renderSides: ['left'], selectionId: 'calves_left' },
-      { bodyFrontSlug: 'ankles',   renderSides: ['left'], selectionId: 'ankles_left' },
+      { slug: 'tibialis', renderSides: ['left'], selectionId: 'tibialis_left' },
+      { slug: 'calves',   renderSides: ['left'], selectionId: 'calves_left' },
+      { slug: 'ankles',   renderSides: ['left'], selectionId: 'ankles_left' },
     ],
   },
   {
@@ -109,9 +109,9 @@ export const REGION_CONFIGS: RegionConfig[] = [
     label: 'Right Leg',
     viewBox: '385 958 120 355',
     zones: [
-      { bodyFrontSlug: 'tibialis', renderSides: ['right'], selectionId: 'tibialis_right' },
-      { bodyFrontSlug: 'calves',   renderSides: ['right'], selectionId: 'calves_right' },
-      { bodyFrontSlug: 'ankles',   renderSides: ['right'], selectionId: 'ankles_right' },
+      { slug: 'tibialis', renderSides: ['right'], selectionId: 'tibialis_right' },
+      { slug: 'calves',   renderSides: ['right'], selectionId: 'calves_right' },
+      { slug: 'ankles',   renderSides: ['right'], selectionId: 'ankles_right' },
     ],
   },
   {
@@ -119,8 +119,8 @@ export const REGION_CONFIGS: RegionConfig[] = [
     label: 'Feet',
     viewBox: '222 1268 295 100',
     zones: [
-      { bodyFrontSlug: 'feet', renderSides: ['left'],  selectionId: 'feet_left' },
-      { bodyFrontSlug: 'feet', renderSides: ['right'], selectionId: 'feet_right' },
+      { slug: 'feet', renderSides: ['left'],  selectionId: 'feet_left' },
+      { slug: 'feet', renderSides: ['right'], selectionId: 'feet_right' },
     ],
   },
 ];
