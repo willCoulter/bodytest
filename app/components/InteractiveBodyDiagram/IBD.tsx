@@ -3,6 +3,7 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import styles from './IBD.module.css';
 import { BodyDiagram } from './diagrams/BodyDiagram';
+import { BodyBackDiagram } from './diagrams/BodyBackDiagram';
 import { HeadDiagram } from './diagrams/HeadDiagram';
 import { RegionDiagram } from './diagrams/RegionDiagram';
 import { useSelections } from './hooks/useSelections';
@@ -84,6 +85,7 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
   const { selections, dispatch } = useSelections(initialValue);
 
   const [mode, setMode] = React.useState<Mode>('zone');
+  const [bodyView, setBodyView] = React.useState<'front' | 'back'>('front');
 
   const drawModeData = useDrawMode(
     svgRef,
@@ -92,10 +94,11 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
         const centroid = centroidOf(points);
         const matchedSlug = matchLabelFromPoint(centroid);
         const label = matchedSlug ? zoneLabels[matchedSlug] ?? matchedSlug : 'Custom area';
-        const sel: FreehandSelection = { type: 'freehand', label, points, drillLevel };
+        const viewKey = bodyView === 'back' ? 'back' : drillLevel;
+        const sel: FreehandSelection = { type: 'freehand', label, points, drillLevel: viewKey };
         dispatch({ type: 'ADD_FREEHAND', payload: sel });
       },
-      [dispatch, drillLevel]
+      [dispatch, drillLevel, bodyView]
     )
   );
 
@@ -105,10 +108,11 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
       (center: [number, number], radius: number) => {
         const matchedSlug = matchLabelFromPoint(center);
         const label = matchedSlug ? zoneLabels[matchedSlug] ?? matchedSlug : 'Custom area';
-        const sel: RadiusSelection = { type: 'radius', label, center, radius, drillLevel };
+        const viewKey = bodyView === 'back' ? 'back' : drillLevel;
+        const sel: RadiusSelection = { type: 'radius', label, center, radius, drillLevel: viewKey };
         dispatch({ type: 'ADD_RADIUS', payload: sel });
       },
-      [dispatch, drillLevel]
+      [dispatch, drillLevel, bodyView]
     )
   );
 
@@ -116,6 +120,13 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
     drawModeData.reset();
     radiusModeData.reset();
     setMode(m);
+  };
+
+  const handleToggleView = () => {
+    drillOut();
+    drawModeData.reset();
+    radiusModeData.reset();
+    setBodyView((v) => (v === 'front' ? 'back' : 'front'));
   };
 
   // Body-view click: navigate into the appropriate region
@@ -132,6 +143,17 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
     (selectionId: string) => {
       const label = zoneLabels[selectionId] ?? selectionId;
       const sel: ZoneSelection = { type: 'zone', zoneId: selectionId, label };
+      dispatch({ type: 'TOGGLE_ZONE', payload: sel });
+    },
+    [dispatch]
+  );
+
+  // Back-body zone click: resolve to a side-aware ID and toggle directly
+  const handleBackZoneClick = useCallback(
+    (slug: string, side: 'left' | 'right' | 'common') => {
+      const zoneId = side === 'common' ? slug : `${slug}_${side}`;
+      const label = zoneLabels[zoneId] ?? zoneLabels[slug] ?? slug;
+      const sel: ZoneSelection = { type: 'zone', zoneId, label };
       dispatch({ type: 'TOGGLE_ZONE', payload: sel });
     },
     [dispatch]
@@ -168,11 +190,12 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
     .filter((s): s is ZoneSelection => s.type === 'zone')
     .map((s) => s.zoneId);
 
+  const effectiveViewKey = bodyView === 'back' ? 'back' : drillLevel;
   const freehandSels = selections.filter(
-    (s): s is FreehandSelection => s.type === 'freehand' && s.drillLevel === drillLevel
+    (s): s is FreehandSelection => s.type === 'freehand' && s.drillLevel === effectiveViewKey
   );
   const radiusSels = selections.filter(
-    (s): s is RadiusSelection => s.type === 'radius' && s.drillLevel === drillLevel
+    (s): s is RadiusSelection => s.type === 'radius' && s.drillLevel === effectiveViewKey
   );
 
   const activeDrawPoints = drawModeData.drawState.points;
@@ -211,8 +234,24 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
     <div className={styles.wrapper}>
       {/* ─── Diagram column ─── */}
       <div className={styles.diagramColumn}>
-        {/* Breadcrumb */}
-        {drillLevel !== 'body' && (
+        {/* Front/Back toggle */}
+        <div className={styles.viewToggle}>
+          <button
+            className={`${styles.viewToggleBtn} ${bodyView === 'front' ? styles.viewToggleBtnActive : ''}`}
+            onClick={() => bodyView !== 'front' && handleToggleView()}
+          >
+            Front
+          </button>
+          <button
+            className={`${styles.viewToggleBtn} ${bodyView === 'back' ? styles.viewToggleBtnActive : ''}`}
+            onClick={() => bodyView !== 'back' && handleToggleView()}
+          >
+            Back
+          </button>
+        </div>
+
+        {/* Breadcrumb (front drill-downs only) */}
+        {bodyView === 'front' && drillLevel !== 'body' && (
           <div className={styles.breadcrumb}>
             <button className={styles.breadcrumbLink} onClick={drillOut}>
               Body
@@ -265,21 +304,28 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
         )}
 
         {/* Diagrams */}
-        {drillLevel === 'body' && (
+        {bodyView === 'back' && (
+          <BodyBackDiagram
+            ref={svgRef}
+            {...sharedDiagramProps}
+            onZoneClick={handleBackZoneClick}
+          />
+        )}
+        {bodyView === 'front' && drillLevel === 'body' && (
           <BodyDiagram
             ref={svgRef}
             {...sharedDiagramProps}
             onZoneClick={handleBodyZoneClick}
           />
         )}
-        {drillLevel === 'head' && (
+        {bodyView === 'front' && drillLevel === 'head' && (
           <HeadDiagram
             ref={svgRef}
             {...sharedDiagramProps}
             onZoneClick={handleRegionZoneClick}
           />
         )}
-        {currentRegionConfig && (
+        {bodyView === 'front' && currentRegionConfig && (
           <RegionDiagram
             ref={svgRef}
             {...sharedDiagramProps}

@@ -1,5 +1,6 @@
 export type DrillLevel =
   | 'body'
+  | 'back'
   | 'head'
   | 'upper_body'
   | 'abdomen'

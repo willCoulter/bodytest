@@ -54,6 +54,22 @@ export const zoneLabels: Record<string, string> = {
   feet_left:        'Left Foot',
   feet_right:       'Right Foot',
 
+  // ── Back-only zones ──────────────────────────────────────────────────────
+  upper_back:       'Upper Back',
+  upper_back_left:  'Left Upper Back',
+  upper_back_right: 'Right Upper Back',
+  lower_back:       'Lower Back',
+  lower_back_left:  'Left Lower Back',
+  lower_back_right: 'Right Lower Back',
+  gluteal:          'Glutes',
+  gluteal_left:     'Left Glute',
+  gluteal_right:    'Right Glute',
+  hamstring:        'Hamstrings',
+  hamstring_left:   'Left Hamstring',
+  hamstring_right:  'Right Hamstring',
+  neck_left:        'Left Neck',
+  neck_right:       'Right Neck',
+
   // ── Head sub-zones ────────────────────────────────────────────────────────
   head_forehead:      'Forehead',
   head_left_brow:     'Left Brow',
