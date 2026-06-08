@@ -15,7 +15,12 @@ import { matchLabelFromPoint, centroidOf } from './utils/labelMatcher';
 import { zoneLabels } from './data/zoneLabels';
 import { REGION_CONFIGS, getRegionForZone } from './data/regionConfig';
 import { BACK_REGION_CONFIGS, getBackRegionForZone } from './data/backRegionConfig';
+import { FEMALE_BACK_REGION_CONFIGS, getFemaleBackRegionForZone } from './data/femaleBackRegionConfig';
 import { bodyBack } from './data/bodyBack';
+import { bodyFemaleBack } from './data/bodyFemaleBack';
+import { bodyFemaleFront } from './data/bodyFemaleFront';
+import { BodyFemaleDiagram } from './diagrams/BodyFemaleDiagram';
+import { BodyFemaleBackDiagram } from './diagrams/BodyFemaleBackDiagram';
 import type { IBDOutput, Mode, ZoneSelection, FreehandSelection, RadiusSelection } from './types';
 
 // ─── Icon components ────────────────────────────────────────────────────────
@@ -88,6 +93,7 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
 
   const [mode, setMode] = React.useState<Mode>('zone');
   const [bodyView, setBodyView] = React.useState<'front' | 'back'>('front');
+  const [bodyType, setBodyType] = React.useState<'masc' | 'fem'>('masc');
 
   const drawModeData = useDrawMode(
     svgRef,
@@ -135,6 +141,13 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
     setBodyView((v) => (v === 'front' ? 'back' : 'front'));
   };
 
+  const handleToggleBodyType = () => {
+    drillOut();
+    drawModeData.reset();
+    radiusModeData.reset();
+    setBodyType((t) => (t === 'masc' ? 'fem' : 'masc'));
+  };
+
   // Body-view click: navigate into the appropriate region
   const handleBodyZoneClick = useCallback(
     (slug: string, side: 'left' | 'right' | 'common') => {
@@ -157,7 +170,9 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
   // Back-body zone click: navigate to drill-down or select directly
   const handleBackZoneClick = useCallback(
     (slug: string, side: 'left' | 'right' | 'common') => {
-      const region = getBackRegionForZone(slug, side);
+      const region = bodyType === 'fem'
+        ? getFemaleBackRegionForZone(slug, side)
+        : getBackRegionForZone(slug, side);
       if (region) {
         drillInto(region);
       } else {
@@ -167,7 +182,7 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
         dispatch({ type: 'TOGGLE_ZONE', payload: sel });
       }
     },
-    [dispatch, drillInto]
+    [dispatch, drillInto, bodyType]
   );
 
   const onPointerDown = useCallback(
@@ -240,7 +255,7 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
   // Resolve current back region config
   const currentBackRegionConfig =
     bodyView === 'back' && drillLevel !== 'body'
-      ? BACK_REGION_CONFIGS.find((c) => c.id === drillLevel) ?? null
+      ? (bodyType === 'fem' ? FEMALE_BACK_REGION_CONFIGS : BACK_REGION_CONFIGS).find((c) => c.id === drillLevel) ?? null
       : null;
 
   // Breadcrumb label
@@ -266,6 +281,22 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
             onClick={() => bodyView !== 'back' && handleToggleView()}
           >
             Back
+          </button>
+        </div>
+
+        {/* Masc/Fem toggle */}
+        <div className={styles.viewToggle}>
+          <button
+            className={`${styles.viewToggleBtn} ${bodyType === 'masc' ? styles.viewToggleBtnActive : ''}`}
+            onClick={() => bodyType !== 'masc' && handleToggleBodyType()}
+          >
+            Masc
+          </button>
+          <button
+            className={`${styles.viewToggleBtn} ${bodyType === 'fem' ? styles.viewToggleBtnActive : ''}`}
+            onClick={() => bodyType !== 'fem' && handleToggleBodyType()}
+          >
+            Fem
           </button>
         </div>
 
@@ -323,14 +354,21 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
         )}
 
         {/* Diagrams */}
-        {bodyView === 'back' && drillLevel === 'body' && (
+        {bodyView === 'back' && drillLevel === 'body' && bodyType === 'masc' && (
           <BodyBackDiagram
             ref={svgRef}
             {...sharedDiagramProps}
             onZoneClick={handleBackZoneClick}
           />
         )}
-        {bodyView === 'back' && currentBackRegionConfig && (
+        {bodyView === 'back' && drillLevel === 'body' && bodyType === 'fem' && (
+          <BodyFemaleBackDiagram
+            ref={svgRef}
+            {...sharedDiagramProps}
+            onZoneClick={handleBackZoneClick}
+          />
+        )}
+        {bodyView === 'back' && currentBackRegionConfig && bodyType === 'masc' && (
           <RegionDiagram
             ref={svgRef}
             {...sharedDiagramProps}
@@ -340,8 +378,25 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
             onZoneClick={handleRegionZoneClick}
           />
         )}
-        {bodyView === 'front' && drillLevel === 'body' && (
+        {bodyView === 'back' && currentBackRegionConfig && bodyType === 'fem' && (
+          <RegionDiagram
+            ref={svgRef}
+            {...sharedDiagramProps}
+            viewBox={currentBackRegionConfig.viewBox}
+            zones={currentBackRegionConfig.zones}
+            bodyData={bodyFemaleBack}
+            onZoneClick={handleRegionZoneClick}
+          />
+        )}
+        {bodyView === 'front' && drillLevel === 'body' && bodyType === 'masc' && (
           <BodyDiagram
+            ref={svgRef}
+            {...sharedDiagramProps}
+            onZoneClick={handleBodyZoneClick}
+          />
+        )}
+        {bodyView === 'front' && drillLevel === 'body' && bodyType === 'fem' && (
+          <BodyFemaleDiagram
             ref={svgRef}
             {...sharedDiagramProps}
             onZoneClick={handleBodyZoneClick}
@@ -354,12 +409,22 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
             onZoneClick={handleRegionZoneClick}
           />
         )}
-        {bodyView === 'front' && currentRegionConfig && (
+        {bodyView === 'front' && currentRegionConfig && bodyType === 'masc' && (
           <RegionDiagram
             ref={svgRef}
             {...sharedDiagramProps}
             viewBox={currentRegionConfig.viewBox}
             zones={currentRegionConfig.zones}
+            onZoneClick={handleRegionZoneClick}
+          />
+        )}
+        {bodyView === 'front' && currentRegionConfig && bodyType === 'fem' && (
+          <RegionDiagram
+            ref={svgRef}
+            {...sharedDiagramProps}
+            viewBox={currentRegionConfig.viewBox}
+            zones={currentRegionConfig.zones}
+            bodyData={bodyFemaleFront as { slug: string; path: { left?: string[]; right?: string[]; common?: string[] } }[]}
             onZoneClick={handleRegionZoneClick}
           />
         )}
