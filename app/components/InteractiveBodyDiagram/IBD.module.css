@@ -1,0 +1,192 @@
+.wrapper {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  align-items: flex-start;
+  font-family: var(--font-geist-sans, system-ui, sans-serif);
+}
+
+@media (max-width: 640px) {
+  .wrapper {
+    flex-direction: column;
+  }
+}
+
+/* ─── Diagram column ─── */
+.diagramColumn {
+  position: relative;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ─── Breadcrumb ─── */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #6b7280;
+  padding: 0 2px;
+}
+
+.breadcrumbLink {
+  color: #2AB5A3;
+  cursor: pointer;
+  text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+}
+
+.breadcrumbLink:hover {
+  text-decoration: underline;
+}
+
+.breadcrumbSep {
+  color: #9ca3af;
+}
+
+/* ─── Toolbar ─── */
+.toolbar {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+}
+
+.toolBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  color: #374151;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  font-size: 16px;
+  padding: 0;
+}
+
+.toolBtn:hover {
+  background: #f3f4f6;
+}
+
+.toolBtnActive {
+  background: #2AB5A3;
+  color: #fff;
+  border-color: #229e8e;
+}
+
+.toolBtnActive:hover {
+  background: #229e8e;
+}
+
+.toolBtnDanger:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.toolDivider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 2px 0;
+}
+
+/* ─── Summary panel ─── */
+.summaryPanel {
+  flex: 1 1 220px;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.summaryHeader {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.summaryEmpty {
+  font-size: 13px;
+  color: #9ca3af;
+  padding: 8px 0;
+}
+
+.summaryItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+}
+
+.swatch {
+  flex: 0 0 10px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.summaryLabelInput {
+  flex: 1;
+  font-size: 13px;
+  border: none;
+  background: transparent;
+  color: #111827;
+  min-width: 0;
+  outline: none;
+  cursor: text;
+}
+
+.summaryLabelInput:focus {
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px #2AB5A380;
+}
+
+.removeBtn {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+  transition: color 0.1s, background 0.1s;
+}
+
+.removeBtn:hover {
+  color: #dc2626;
+  background: #fee2e2;
+}
