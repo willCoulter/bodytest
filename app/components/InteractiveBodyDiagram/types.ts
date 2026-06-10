@@ -48,3 +48,5 @@ export type IBDOutput = {
 };
 
 export type Mode = 'zone' | 'draw' | 'radius';
+
+export type Layer = 'surface' | 'skeleton';

@@ -5,6 +5,7 @@ import styles from './IBD.module.css';
 import { BodyDiagram } from './diagrams/BodyDiagram';
 import { BodyBackDiagram } from './diagrams/BodyBackDiagram';
 import { HeadDiagram } from './diagrams/HeadDiagram';
+import { HeadFemaleDiagram } from './diagrams/HeadFemaleDiagram';
 import { RegionDiagram } from './diagrams/RegionDiagram';
 import { useSelections } from './hooks/useSelections';
 import { useDrillDown } from './hooks/useDrillDown';
@@ -21,7 +22,7 @@ import { bodyFemaleBack } from './data/bodyFemaleBack';
 import { bodyFemaleFront } from './data/bodyFemaleFront';
 import { BodyFemaleDiagram } from './diagrams/BodyFemaleDiagram';
 import { BodyFemaleBackDiagram } from './diagrams/BodyFemaleBackDiagram';
-import type { IBDOutput, Mode, ZoneSelection, FreehandSelection, RadiusSelection } from './types';
+import type { IBDOutput, Mode, Layer, ZoneSelection, FreehandSelection, RadiusSelection } from './types';
 
 // ─── Icon components ────────────────────────────────────────────────────────
 
@@ -65,6 +66,18 @@ function IconTrash() {
     </svg>
   );
 }
+function IconSkeleton() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="4" r="2" />
+      <path d="M12 6v4" />
+      <path d="M8 10h8" />
+      <path d="M9 10v5l-2 4" />
+      <path d="M15 10v5l2 4" />
+      <path d="M10 15h4" />
+    </svg>
+  );
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -92,6 +105,7 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
   const { selections, dispatch } = useSelections(initialValue);
 
   const [mode, setMode] = React.useState<Mode>('zone');
+  const [activeLayer, setActiveLayer] = React.useState<Layer>('surface');
   const [bodyView, setBodyView] = React.useState<'front' | 'back'>('front');
   const [bodyType, setBodyType] = React.useState<'masc' | 'fem'>('masc');
 
@@ -147,6 +161,14 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
     radiusModeData.reset();
     setBodyType((t) => (t === 'masc' ? 'fem' : 'masc'));
   };
+
+  const handleBoneClick = useCallback(
+    (boneId: string, label: string) => {
+      const sel: ZoneSelection = { type: 'zone', zoneId: boneId, label };
+      dispatch({ type: 'TOGGLE_ZONE', payload: sel });
+    },
+    [dispatch]
+  );
 
   // Body-view click: navigate into the appropriate region
   const handleBodyZoneClick = useCallback(
@@ -246,6 +268,9 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
     readOnly,
   };
 
+  // Extra props only for diagrams that support the skeleton layer
+  const skeletonProps = { activeLayer, onBoneClick: handleBoneClick };
+
   // Resolve current front region config
   const currentRegionConfig =
     bodyView === 'front' && drillLevel !== 'body' && drillLevel !== 'head'
@@ -337,6 +362,14 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
             </button>
             <div className={styles.toolDivider} />
             <button
+              className={`${styles.toolBtn} ${activeLayer === 'skeleton' ? styles.toolBtnActive : ''}`}
+              title="Skeleton Layer"
+              onClick={() => setActiveLayer((l) => l === 'skeleton' ? 'surface' : 'skeleton')}
+            >
+              <IconSkeleton />
+            </button>
+            <div className={styles.toolDivider} />
+            <button
               className={styles.toolBtn}
               title="Undo"
               onClick={() => dispatch({ type: 'UNDO' })}
@@ -392,6 +425,7 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
           <BodyDiagram
             ref={svgRef}
             {...sharedDiagramProps}
+            {...skeletonProps}
             onZoneClick={handleBodyZoneClick}
           />
         )}
@@ -402,8 +436,15 @@ export default function IBD({ onChange, initialValue, readOnly = false, height =
             onZoneClick={handleBodyZoneClick}
           />
         )}
-        {bodyView === 'front' && drillLevel === 'head' && (
+        {bodyView === 'front' && drillLevel === 'head' && bodyType === 'masc' && (
           <HeadDiagram
+            ref={svgRef}
+            {...sharedDiagramProps}
+            onZoneClick={handleRegionZoneClick}
+          />
+        )}
+        {bodyView === 'front' && drillLevel === 'head' && bodyType === 'fem' && (
+          <HeadFemaleDiagram
             ref={svgRef}
             {...sharedDiagramProps}
             onZoneClick={handleRegionZoneClick}

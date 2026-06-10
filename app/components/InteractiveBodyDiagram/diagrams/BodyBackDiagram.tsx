@@ -3,12 +3,9 @@
 import React, { forwardRef, useState } from 'react';
 import { bodyBack } from '../data/bodyBack';
 import type { FreehandSelection, RadiusSelection, Mode } from '../types';
+import { AnnotationOverlay } from './AnnotationOverlay';
 
 const TEAL = '#2AB5A3';
-const AMBER = '#F59E0B';
-const AMBER_STROKE = '#D97706';
-const INDIGO = '#818CF8';
-const INDIGO_STROKE = '#6366F1';
 
 type Props = {
   mode: Mode;
@@ -102,96 +99,38 @@ export const BodyBackDiagram = forwardRef<SVGSVGElement, Props>(function BodyBac
     });
   }
 
-  const drawPolylineStr = activeDrawPoints.map((p) => p.join(',')).join(' ');
-  const closeThreshold = 12;
-  const nearClose =
-    activeDrawPoints.length > 2 &&
-    Math.hypot(
-      activeDrawPoints[0][0] - activeDrawPoints[activeDrawPoints.length - 1][0],
-      activeDrawPoints[0][1] - activeDrawPoints[activeDrawPoints.length - 1][1]
-    ) < closeThreshold;
-
   return (
-    <svg
-      ref={ref}
-      viewBox="755 85 660 1280"
-      preserveAspectRatio="xMidYMid meet"
-      style={{ height, width: '100%', display: 'block', touchAction: 'none' }}
-      onPointerDown={canInteract ? onPointerDown : undefined}
-      onPointerMove={canInteract ? onPointerMove : undefined}
-      onPointerUp={canInteract ? onPointerUp : undefined}
-    >
-      <g>{bodyBack.map((zone) => renderZonePaths(zone))}</g>
+    <div style={{ position: 'relative', height, width: '100%' }}>
+      <svg
+        ref={ref}
+        viewBox="755 85 660 1280"
+        preserveAspectRatio="xMidYMid meet"
+        style={{ height, width: '100%', display: 'block', touchAction: 'none' }}
+        onPointerDown={canInteract ? onPointerDown : undefined}
+        onPointerMove={canInteract ? onPointerMove : undefined}
+        onPointerUp={canInteract ? onPointerUp : undefined}
+      >
+        <g>{bodyBack.map((zone) => renderZonePaths(zone))}</g>
 
-      {freehandSelections.map((sel, i) => (
-        <polygon
-          key={`freehand-${i}`}
-          points={sel.points.map((p) => p.join(',')).join(' ')}
-          fill={`${AMBER}59`}
-          stroke={AMBER_STROKE}
-          strokeWidth={1.5}
-          style={{ pointerEvents: 'none' }}
-        />
-      ))}
-
-      {radiusSelections.map((sel, i) => (
-        <circle
-          key={`radius-${i}`}
-          cx={sel.center[0]}
-          cy={sel.center[1]}
-          r={sel.radius}
-          fill={`${INDIGO}4D`}
-          stroke={INDIGO_STROKE}
-          strokeWidth={1.5}
-          style={{ pointerEvents: 'none' }}
-        />
-      ))}
-
-      {activeDrawPoints.length > 1 && (
-        <>
-          <polyline
-            points={drawPolylineStr}
-            fill="none"
-            stroke={nearClose ? AMBER : AMBER_STROKE}
-            strokeWidth={1.5}
-            strokeDasharray={nearClose ? 'none' : '4 2'}
-            style={{ pointerEvents: 'none' }}
+        {canInteract && mode !== 'zone' && (
+          <rect
+            x="-99999"
+            y="-99999"
+            width="999999"
+            height="999999"
+            fill="transparent"
+            style={{ cursor: mode === 'draw' ? 'crosshair' : 'cell', pointerEvents: 'auto' }}
           />
-          <circle
-            cx={activeDrawPoints[0][0]}
-            cy={activeDrawPoints[0][1]}
-            r={nearClose ? 8 : 4}
-            fill={nearClose ? AMBER : 'none'}
-            stroke={AMBER_STROKE}
-            strokeWidth={1.5}
-            style={{ pointerEvents: 'none' }}
-          />
-        </>
-      )}
+        )}
+      </svg>
 
-      {activeRadius && (
-        <circle
-          cx={activeRadius.center[0]}
-          cy={activeRadius.center[1]}
-          r={activeRadius.radius}
-          fill={`${INDIGO}4D`}
-          stroke={INDIGO_STROKE}
-          strokeWidth={1.5}
-          strokeDasharray="6 3"
-          style={{ pointerEvents: 'none' }}
-        />
-      )}
-
-      {canInteract && mode !== 'zone' && (
-        <rect
-          x="-99999"
-          y="-99999"
-          width="999999"
-          height="999999"
-          fill="transparent"
-          style={{ cursor: mode === 'draw' ? 'crosshair' : 'cell', pointerEvents: 'auto' }}
-        />
-      )}
-    </svg>
+      <AnnotationOverlay
+        viewBox="755 85 660 1280"
+        freehandSelections={freehandSelections}
+        radiusSelections={radiusSelections}
+        activeDrawPoints={activeDrawPoints}
+        activeRadius={activeRadius}
+      />
+    </div>
   );
 });

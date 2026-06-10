@@ -2,19 +2,19 @@
 
 import React, { forwardRef, useState } from 'react';
 import { bodyFront } from '../data/bodyFront';
-import type { FreehandSelection, RadiusSelection, Mode } from '../types';
+import type { FreehandSelection, RadiusSelection, Mode, Layer } from '../types';
+import { AnnotationOverlay } from './AnnotationOverlay';
+import { SkeletonOverlay } from './SkeletonOverlay';
 
 const TEAL = '#2AB5A3';
-const AMBER = '#F59E0B';
-const AMBER_STROKE = '#D97706';
-const INDIGO = '#818CF8';
-const INDIGO_STROKE = '#6366F1';
 
 
 type Props = {
   mode: Mode;
+  activeLayer: Layer;
   selectedZones: string[];
   onZoneClick: (slug: string, side: 'left' | 'right' | 'common') => void;
+  onBoneClick: (boneId: string, label: string) => void;
   freehandSelections: FreehandSelection[];
   radiusSelections: RadiusSelection[];
   activeDrawPoints: [number, number][];
@@ -29,8 +29,10 @@ type Props = {
 export const BodyDiagram = forwardRef<SVGSVGElement, Props>(function BodyDiagram(
   {
     mode,
+    activeLayer,
     selectedZones,
     onZoneClick,
+    onBoneClick,
     freehandSelections,
     radiusSelections,
     activeDrawPoints,
@@ -45,22 +47,23 @@ export const BodyDiagram = forwardRef<SVGSVGElement, Props>(function BodyDiagram
 ) {
   const [hoveredZone, setHoveredZone] = useState<string | null>(null);
   const canInteract = !readOnly;
+  const skeletonActive = activeLayer === 'skeleton';
 
   function getZoneFill(slug: string, baseColor: string): string {
     const isSelected = selectedZones.includes(slug);
-    const isHovered = hoveredZone === slug && mode === 'zone';
-    if (isSelected) return `${TEAL}80`; // 50% opacity
-    if (isHovered) return `${TEAL}26`;  // 15% opacity
-    if (slug === 'head') return baseColor;
+    const isHovered = hoveredZone === slug && mode === 'zone' && !skeletonActive;
+    if (isSelected) return `${TEAL}80`;
+    if (isHovered) return `${TEAL}26`;
+    if (slug === 'head') return skeletonActive ? `${baseColor}26` : baseColor;
     return 'transparent';
   }
 
   function getZoneStroke(slug: string): { color: string; width: number; opacity: number } {
     const isSelected = selectedZones.includes(slug);
-    const isHovered = hoveredZone === slug && mode === 'zone';
+    const isHovered = hoveredZone === slug && mode === 'zone' && !skeletonActive;
     if (isSelected) return { color: TEAL, width: 2, opacity: 1 };
     if (isHovered) return { color: TEAL, width: 1, opacity: 0.8 };
-    return { color: '#3f3f3f', width: 0.5, opacity: 0.5 };
+    return { color: '#3f3f3f', width: 0.5, opacity: skeletonActive ? 0.15 : 0.5 };
   }
 
   function renderZonePaths(zone: (typeof bodyFront)[0]) {
@@ -82,14 +85,14 @@ export const BodyDiagram = forwardRef<SVGSVGElement, Props>(function BodyDiagram
           strokeWidth={stroke.width}
           strokeOpacity={stroke.opacity}
           style={{
-            cursor: canInteract && mode === 'zone' ? 'pointer' : 'default',
-            pointerEvents: canInteract && mode === 'zone' ? 'auto' : 'none',
+            cursor: canInteract && mode === 'zone' && !skeletonActive ? 'pointer' : 'default',
+            pointerEvents: canInteract && mode === 'zone' && !skeletonActive ? 'auto' : 'none',
             transition: 'fill 0.12s ease, stroke 0.12s ease',
           }}
-          onPointerEnter={() => canInteract && mode === 'zone' && setHoveredZone(zone.slug)}
+          onPointerEnter={() => canInteract && mode === 'zone' && !skeletonActive && setHoveredZone(zone.slug)}
           onPointerLeave={() => setHoveredZone(null)}
           onClick={() => {
-            if (canInteract && mode === 'zone') {
+            if (canInteract && mode === 'zone' && !skeletonActive) {
               onZoneClick(zone.slug, side);
             }
           }}
@@ -98,104 +101,50 @@ export const BodyDiagram = forwardRef<SVGSVGElement, Props>(function BodyDiagram
     );
   }
 
-  const drawPolylineStr = activeDrawPoints.map((p) => p.join(',')).join(' ');
-  const closeThreshold = 12;
-  const nearClose =
-    activeDrawPoints.length > 2 &&
-    Math.hypot(
-      activeDrawPoints[0][0] - activeDrawPoints[activeDrawPoints.length - 1][0],
-      activeDrawPoints[0][1] - activeDrawPoints[activeDrawPoints.length - 1][1]
-    ) < closeThreshold;
-
   return (
-    <svg
-      ref={ref}
-      viewBox="40 100 660 1280"
-      preserveAspectRatio="xMidYMid meet"
-      style={{ height, width: '100%', display: 'block', touchAction: 'none' }}
-      onPointerDown={canInteract ? onPointerDown : undefined}
-      onPointerMove={canInteract ? onPointerMove : undefined}
-      onPointerUp={canInteract ? onPointerUp : undefined}
-    >
-      {/* Zone paths */}
-      <g>{bodyFront.map((zone) => renderZonePaths(zone))}</g>
+    <div style={{ position: 'relative', height, width: '100%' }}>
+      <svg
+        ref={ref}
+        viewBox="40 100 660 1280"
+        preserveAspectRatio="xMidYMid meet"
+        style={{ height, width: '100%', display: 'block', touchAction: 'none' }}
+        onPointerDown={canInteract ? onPointerDown : undefined}
+        onPointerMove={canInteract ? onPointerMove : undefined}
+        onPointerUp={canInteract ? onPointerUp : undefined}
+      >
+        {/* Zone paths — faded when skeleton layer is active */}
+        <g opacity={skeletonActive ? 0.2 : 1}>{bodyFront.map((zone) => renderZonePaths(zone))}</g>
 
-      {/* Committed freehand shapes */}
-      {freehandSelections.map((sel, i) => (
-        <polygon
-          key={`freehand-${i}`}
-          points={sel.points.map((p) => p.join(',')).join(' ')}
-          fill={`${AMBER}59`}
-          stroke={AMBER_STROKE}
-          strokeWidth={1.5}
-          style={{ pointerEvents: 'none' }}
-        />
-      ))}
-
-      {/* Committed radius circles */}
-      {radiusSelections.map((sel, i) => (
-        <circle
-          key={`radius-${i}`}
-          cx={sel.center[0]}
-          cy={sel.center[1]}
-          r={sel.radius}
-          fill={`${INDIGO}4D`}
-          stroke={INDIGO_STROKE}
-          strokeWidth={1.5}
-          style={{ pointerEvents: 'none' }}
-        />
-      ))}
-
-      {/* Active freehand in progress */}
-      {activeDrawPoints.length > 1 && (
-        <>
-          <polyline
-            points={drawPolylineStr}
-            fill="none"
-            stroke={nearClose ? AMBER : AMBER_STROKE}
-            strokeWidth={1.5}
-            strokeDasharray={nearClose ? 'none' : '4 2'}
-            style={{ pointerEvents: 'none' }}
+        {/* Skeleton layer */}
+        {skeletonActive && (
+          <SkeletonOverlay
+            mode={mode}
+            selectedZones={selectedZones}
+            onBoneClick={onBoneClick}
+            readOnly={readOnly}
           />
-          {activeDrawPoints.length > 0 && (
-            <circle
-              cx={activeDrawPoints[0][0]}
-              cy={activeDrawPoints[0][1]}
-              r={nearClose ? 8 : 4}
-              fill={nearClose ? AMBER : 'none'}
-              stroke={AMBER_STROKE}
-              strokeWidth={1.5}
-              style={{ pointerEvents: 'none' }}
-            />
-          )}
-        </>
-      )}
+        )}
 
-      {/* Active radius in progress */}
-      {activeRadius && (
-        <circle
-          cx={activeRadius.center[0]}
-          cy={activeRadius.center[1]}
-          r={activeRadius.radius}
-          fill={`${INDIGO}4D`}
-          stroke={INDIGO_STROKE}
-          strokeWidth={1.5}
-          strokeDasharray="6 3"
-          style={{ pointerEvents: 'none' }}
-        />
-      )}
+        {/* Invisible capture overlay for draw/radius modes */}
+        {canInteract && mode !== 'zone' && (
+          <rect
+            x="0"
+            y="0"
+            width="10000"
+            height="10000"
+            fill="transparent"
+            style={{ cursor: mode === 'draw' ? 'crosshair' : 'cell', pointerEvents: 'auto' }}
+          />
+        )}
+      </svg>
 
-      {/* Invisible capture overlay for draw/radius modes */}
-      {canInteract && mode !== 'zone' && (
-        <rect
-          x="0"
-          y="0"
-          width="10000"
-          height="10000"
-          fill="transparent"
-          style={{ cursor: mode === 'draw' ? 'crosshair' : 'cell', pointerEvents: 'auto' }}
-        />
-      )}
-    </svg>
+      <AnnotationOverlay
+        viewBox="40 100 660 1280"
+        freehandSelections={freehandSelections}
+        radiusSelections={radiusSelections}
+        activeDrawPoints={activeDrawPoints}
+        activeRadius={activeRadius}
+      />
+    </div>
   );
 });
